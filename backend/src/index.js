@@ -8,7 +8,12 @@ require('./models');
 
 const app = express();
 
-app.use(cors());
+// Configure CORS - allow frontend origin from env, or all origins in development
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
@@ -29,24 +34,21 @@ app.use('/api/customers', require('./routes/customerRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
-// Export the app for Vercel
-module.exports = app;
-
 const startServer = async () => {
   await connectDB();
-  
-  // Sync DB (in development, alter: true helps update schema without dropping)
+
+  // Sync DB — use alter in development, no-op sync in production
   if (process.env.NODE_ENV !== 'production') {
     await sequelize.sync({ alter: true });
     console.log('Database synced');
+  } else {
+    await sequelize.sync();
+    console.log('Database connected in production mode');
   }
 
-  // Only listen if we are not running on Vercel serverless
-  if (!process.env.VERCEL) {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 };
 
 startServer();
