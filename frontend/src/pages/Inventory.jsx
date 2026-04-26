@@ -4,12 +4,14 @@ import { Package, Search, Plus, Archive, ChevronDown, CheckCircle2, AlertCircle,
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newStock, setNewStock] = useState({ name: '', category: '', warehouse: '', quantity: '' });
+  const [newStock, setNewStock] = useState({ name: '', category: '', warehouse_id: '', quantity: '' });
 
   useEffect(() => {
     fetchInventory();
+    fetchWarehouses();
   }, []);
 
   const fetchInventory = async () => {
@@ -23,6 +25,19 @@ const Inventory = () => {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const { data } = await api.get('/warehouses');
+      setWarehouses(data);
+      // Pre-select the first warehouse if available
+      if (data.length > 0) {
+        setNewStock(prev => ({ ...prev, warehouse_id: data[0].id }));
+      }
+    } catch (error) {
+      console.error('Failed to load warehouses:', error);
+    }
+  };
+
   const handleAddStock = async (e) => {
     e.preventDefault();
     try {
@@ -30,18 +45,17 @@ const Inventory = () => {
       const productResponse = await api.post('/products', {
         name: newStock.name,
         category: newStock.category,
-        price: 0, // Default price
+        price: 0,
       });
       const newProduct = productResponse.data;
 
-      // Then update inventory
+      // Then update inventory — pass warehouse_id (null if none selected, backend handles it)
       const { data } = await api.put('/inventory/update', {
         product_id: newProduct.id,
-        warehouse_id: parseInt(newStock.warehouse) || 1,
+        warehouse_id: newStock.warehouse_id ? parseInt(newStock.warehouse_id) : null,
         quantity: parseInt(newStock.quantity) || 0,
       });
 
-      // Format response to include Product info for the UI
       const inventoryData = {
         ...data,
         Product: newProduct
@@ -49,7 +63,7 @@ const Inventory = () => {
 
       setInventory([inventoryData, ...inventory]);
       setIsModalOpen(false);
-      setNewStock({ name: '', category: '', warehouse: '', quantity: '' });
+      setNewStock({ name: '', category: '', warehouse_id: warehouses[0]?.id || '', quantity: '' });
     } catch (error) {
       console.error('Error adding stock:', error);
       alert(error.response?.data?.message || 'Failed to add stock. Ensure you have the correct role permissions.');
@@ -180,8 +194,20 @@ const Inventory = () => {
                   <input required type="text" value={newStock.category} onChange={(e) => setNewStock({...newStock, category: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">Warehouse ID</label>
-                  <input required type="number" min="1" value={newStock.warehouse} onChange={(e) => setNewStock({...newStock, warehouse: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Warehouse</label>
+                  <select
+                    value={newStock.warehouse_id}
+                    onChange={(e) => setNewStock({...newStock, warehouse_id: e.target.value})}
+                    className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  >
+                    {warehouses.length === 0 ? (
+                      <option value="">No warehouse — one will be created</option>
+                    ) : (
+                      warehouses.map(wh => (
+                        <option key={wh.id} value={wh.id}>{wh.name} ({wh.location})</option>
+                      ))
+                    )}
+                  </select>
                 </div>
               </div>
               <div>
