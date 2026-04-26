@@ -10,16 +10,16 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false          # Set this manually in the Render dashboard
+        sync: false
       - key: JWT_SECRET
-        sync: false          # Set this manually in the Render dashboard
+        sync: false
       - key: GEMINI_API_KEY
-        sync: false          # Set this manually in the Render dashboard
+        sync: false
       - key: FRONTEND_URL
-        sync: false          # Set to your frontend Render URL after deployment
+        sync: false          # Set to your frontend Render URL after it is deployed
     healthCheckPath: /api/health
 
-  # ── Frontend (React / Vite ─ Static Site) ────────────────────────────────
+  # ── Frontend (React / Vite — Static Site) ────────────────────────────────
   - type: web
     name: bts-supply-chain-frontend
     runtime: static
@@ -28,7 +28,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        sync: false          # Set to your backend Render URL + /api e.g. https://bts-supply-chain-backend.onrender.com/api
+        value: https://bts-supply-chain.onrender.com/api
     routes:
       - type: rewrite
         source: /*

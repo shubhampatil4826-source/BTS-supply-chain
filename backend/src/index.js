@@ -8,9 +8,20 @@ require('./models');
 
 const app = express();
 
-// Configure CORS - allow frontend origin from env, or all origins in development
+// Configure CORS — allow specific frontend origins or all in development
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+  : ['*'];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, Render health checks)
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
