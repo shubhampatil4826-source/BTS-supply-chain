@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Package, Search, Plus, Archive, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Package, Search, Plus, Archive, ChevronDown, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newStock, setNewStock] = useState({ name: '', category: '', warehouse: '', quantity: '' });
 
   useEffect(() => {
     fetchInventory();
@@ -21,6 +23,39 @@ const Inventory = () => {
     }
   };
 
+  const handleAddStock = async (e) => {
+    e.preventDefault();
+    try {
+      // First create the product
+      const productResponse = await api.post('/products', {
+        name: newStock.name,
+        category: newStock.category,
+        price: 0, // Default price
+      });
+      const newProduct = productResponse.data;
+
+      // Then update inventory
+      const { data } = await api.put('/inventory/update', {
+        product_id: newProduct.id,
+        warehouse_id: parseInt(newStock.warehouse) || 1,
+        quantity: parseInt(newStock.quantity) || 0,
+      });
+
+      // Format response to include Product info for the UI
+      const inventoryData = {
+        ...data,
+        Product: newProduct
+      };
+
+      setInventory([inventoryData, ...inventory]);
+      setIsModalOpen(false);
+      setNewStock({ name: '', category: '', warehouse: '', quantity: '' });
+    } catch (error) {
+      console.error('Error adding stock:', error);
+      alert(error.response?.data?.message || 'Failed to add stock. Ensure you have the correct role permissions.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -33,7 +68,9 @@ const Inventory = () => {
           <button className="flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-slate-300">
              <Archive size={20} />
           </button>
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 text-sm rounded-xl transition-all font-medium border border-blue-400/30 shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 text-sm rounded-xl transition-all font-medium border border-blue-400/30 shadow-[0_0_15px_rgba(37,99,235,0.3)]">
             <Plus size={18} />
             <span>Add Stock</span>
           </button>
@@ -121,6 +158,44 @@ const Inventory = () => {
           </div>
         )}
       </div>
+
+      {/* Add Stock Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+              <h3 className="text-xl font-bold text-white">Add Stock Entry</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddStock} className="p-6 space-y-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Product Name</label>
+                <input required type="text" value={newStock.name} onChange={(e) => setNewStock({...newStock, name: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Category</label>
+                  <input required type="text" value={newStock.category} onChange={(e) => setNewStock({...newStock, category: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Warehouse ID</label>
+                  <input required type="number" min="1" value={newStock.warehouse} onChange={(e) => setNewStock({...newStock, warehouse: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Quantity</label>
+                <input required type="number" min="1" value={newStock.quantity} onChange={(e) => setNewStock({...newStock, quantity: e.target.value})} className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 px-4 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-colors font-medium">Cancel</button>
+                <button type="submit" className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors font-medium shadow-lg shadow-blue-500/20">Add Stock</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

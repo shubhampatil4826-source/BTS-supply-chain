@@ -22,6 +22,14 @@ const Supplier = sequelize.define('Supplier', {
   rating: {
     type: DataTypes.FLOAT,
     defaultValue: 5.0,
+  },
+  type: {
+    type: DataTypes.STRING,
+    defaultValue: 'General',
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,

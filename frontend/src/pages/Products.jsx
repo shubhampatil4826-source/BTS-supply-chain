@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Plus, Search, Tag, DollarSign, PackageOpen } from 'lucide-react';
+import { Plus, Search, Tag, DollarSign, PackageOpen, X } from 'lucide-react';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', category_id: '' });
 
   useEffect(() => {
     fetchProducts();
@@ -18,6 +20,23 @@ const Products = () => {
       console.error('Error fetching products', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const { data } = await api.post('/products', {
+        name: newProduct.name,
+        price: parseFloat(newProduct.price) || 0,
+        category_id: newProduct.category_id || 'General'
+      });
+      setProducts([data, ...products]);
+      setIsModalOpen(false);
+      setNewProduct({ name: '', price: '', category_id: '' });
+    } catch (error) {
+      console.error('Error adding product:', error);
+      alert(error.response?.data?.message || 'Failed to add product. Ensure you are logged in.');
     }
   };
 
@@ -38,7 +57,9 @@ const Products = () => {
               className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full sm:w-64 transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-colors font-medium border border-blue-400/30 shadow-lg shadow-blue-500/20">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-colors font-medium border border-blue-400/30 shadow-lg shadow-blue-500/20">
             <Plus size={18} />
             <span>Add Product</span>
           </button>
@@ -82,6 +103,72 @@ const Products = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Add Product Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+              <h3 className="text-xl font-bold text-white">Add New Product</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddProduct} className="p-6 space-y-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Product Name</label>
+                <input 
+                  required
+                  type="text" 
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  placeholder="e.g. Smart Sensor V2"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Category</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={newProduct.category_id}
+                    onChange={(e) => setNewProduct({...newProduct, category_id: e.target.value})}
+                    className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    placeholder="e.g. Electronics"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Price ($)</label>
+                  <input 
+                    required
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                    className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    placeholder="e.g. 299.99"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-2 px-4 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-colors font-medium">
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors font-medium shadow-lg shadow-blue-500/20">
+                  Save Product
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

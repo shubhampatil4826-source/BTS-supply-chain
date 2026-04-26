@@ -7,6 +7,6 @@ router.route('/')
   .get(protect, getInventory);
 
 router.route('/update')
-  .put(protect, authorize('Admin', 'Warehouse Manager'), updateInventory);
+  .put(protect, authorize('Admin', 'Warehouse Manager', 'Supplier'), updateInventory);
 
 module.exports = router;
