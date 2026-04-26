@@ -24,11 +24,13 @@ services:
     name: bts-supply-chain-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
         value: https://bts-supply-chain.onrender.com/api
+      - key: NODE_ENV
+        value: production
     routes:
       - type: rewrite
         source: /*
