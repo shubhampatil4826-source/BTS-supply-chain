@@ -29,6 +29,9 @@ app.use('/api/customers', require('./routes/customerRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
+// Export the app for Vercel
+module.exports = app;
+
 const startServer = async () => {
   await connectDB();
   
@@ -38,9 +41,12 @@ const startServer = async () => {
     console.log('Database synced');
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  // Only listen if we are not running on Vercel serverless
+  if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 };
 
 startServer();
