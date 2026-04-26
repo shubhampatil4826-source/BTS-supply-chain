@@ -11,23 +11,25 @@ const Order = sequelize.define('Order', {
   },
   customer_id: {
     type: DataTypes.INTEGER,
-    allowNull: true, // We allow it to be true in case of internal orders or we can migrate it
-    references: {
-      model: 'Customers', 
-      key: 'id',
-    },
+    allowNull: true,
+  },
+  customer_name: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   product_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Product,
-      key: 'id',
-    },
+    allowNull: true,
   },
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    defaultValue: 1,
+  },
+  total_value: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: 0,
   },
   status: {
     type: DataTypes.ENUM('Pending', 'In Transit', 'Delivered', 'Cancelled'),

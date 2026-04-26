@@ -28,21 +28,23 @@ const Orders = () => {
     e.preventDefault();
     try {
       const { data } = await api.post('/orders', {
-        product_id: 1, // Need at least one product with inventory
-        quantity: parseInt(newOrder.items) || 1
+        customer_name: newOrder.customer,
+        quantity: parseInt(newOrder.items) || 1,
+        total_value: parseFloat(newOrder.total) || 0,
       });
       setOrders([data, ...orders]);
       setIsModalOpen(false);
       setNewOrder({ customer: '', items: '', total: '' });
     } catch (error) {
       console.error('Error creating order:', error);
-      alert(error.response?.data?.message || 'Failed to create order. Ensure you are logged in and have added Inventory Stock for Product ID 1.');
+      alert(error.response?.data?.message || 'Failed to create order.');
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'Processing': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'In Transit': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
       case 'Shipped': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
       case 'Delivered': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'Cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20';
@@ -91,20 +93,24 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {orders.map((order) => (
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-500">No orders yet</td>
+                </tr>
+              ) : orders.map((order) => (
                 <tr key={order.id} className="hover:bg-white/5 transition-colors group">
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20 transition-colors">
                         <ShoppingCart size={16} />
                       </div>
-                      <span className="font-medium text-white">{order.id}</span>
+                      <span className="font-medium text-white">#{order.id}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-slate-300">{order.customer}</td>
-                  <td className="py-4 px-6 text-slate-400 text-sm">{order.date}</td>
-                  <td className="py-4 px-6 text-slate-300">{order.items}</td>
-                  <td className="py-4 px-6 font-semibold text-white">{order.total}</td>
+                  <td className="py-4 px-6 text-slate-300">{order.customer_name || '—'}</td>
+                  <td className="py-4 px-6 text-slate-400 text-sm">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="py-4 px-6 text-slate-300">{order.quantity}</td>
+                  <td className="py-4 px-6 font-semibold text-white">${parseFloat(order.total_value || 0).toFixed(2)}</td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
                       {order.status}
