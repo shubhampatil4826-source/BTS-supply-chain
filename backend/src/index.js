@@ -48,14 +48,9 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB();
 
-  // Sync DB — use alter in development, no-op sync in production
-  if (process.env.NODE_ENV !== 'production') {
-    await sequelize.sync({ alter: true });
-    console.log('Database synced');
-  } else {
-    await sequelize.sync();
-    console.log('Database connected in production mode');
-  }
+  // Sync DB — alter: true adds missing columns without dropping data
+  await sequelize.sync({ alter: true });
+  console.log('Database synced (alter mode)');
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
